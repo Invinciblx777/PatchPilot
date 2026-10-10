@@ -1,4 +1,5 @@
 import { useEffect } from "preact/hooks";
+import { AccessKeyGate } from "./components/AccessKeyGate.tsx";
 import { Notice } from "./components/common.tsx";
 import { InkDefs } from "./ink/Drawings.tsx";
 import { Header } from "./layout/Header.tsx";
@@ -48,6 +49,7 @@ function ServerUnreachable({ message }: { message: string }) {
 export function App() {
   const { path, hash } = usePath();
   const sessionError = useAppState((s) => s.sessionError);
+  const access = useAppState((s) => s.access);
   const announcement = useAppState((s) => s.announcement);
   const page = PAGES[path];
 
@@ -72,7 +74,15 @@ export function App() {
       <div class={layout.shell}>
         <Nav path={path} />
         <main id="main" class={layout.main} tabIndex={-1}>
-          {sessionError ? <ServerUnreachable message={sessionError.message} /> : page ? page.render() : <NotFound />}
+          {access !== "ok" ? (
+            <AccessKeyGate rejected={access === "rejected"} />
+          ) : sessionError ? (
+            <ServerUnreachable message={sessionError.message} />
+          ) : page ? (
+            page.render()
+          ) : (
+            <NotFound />
+          )}
         </main>
       </div>
       <div class="visually-hidden" aria-live="polite">

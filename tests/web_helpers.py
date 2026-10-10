@@ -26,6 +26,7 @@ from patchpilot.web.app import create_app
 from patchpilot.web.config import RepoEntry, UISettings
 
 SESSION_HEADER = "X-PatchPilot-Session"
+ACCESS_HEADER = "X-PatchPilot-Access-Key"
 AGENT_ID = "patchpilot-tests:v1"
 USER_ID = "user-7f3a91"
 
@@ -128,9 +129,9 @@ def serve_web(
             raise RuntimeError("web app did not start")
         time.sleep(0.02)
     base_url = f"http://127.0.0.1:{port}"
-    auth = None if access_key is None else httpx.BasicAuth("patchpilot", access_key)
-    token = httpx.get(f"{base_url}/api/session", auth=auth).json()["token"]
-    http = httpx.Client(base_url=base_url, headers={SESSION_HEADER: token}, auth=auth, timeout=60)
+    keyed = {} if access_key is None else {ACCESS_HEADER: access_key}
+    token = httpx.get(f"{base_url}/api/session", headers=keyed).json()["token"]
+    http = httpx.Client(base_url=base_url, headers={SESSION_HEADER: token, **keyed}, timeout=60)
     try:
         yield WebApp(base_url=base_url, port=port, token=token, http=http)
     finally:

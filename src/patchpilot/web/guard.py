@@ -17,15 +17,14 @@ is never approved.
 Public mode (patchpilot-ui --public-origin) is for a hosted frontend that
 proxies /api to this server through a tunnel. The listener stays on loopback
 and the tunnel must present a loopback Host header. Two things change: the
-public origin is accepted in Origin, and every request must carry HTTP Basic
-credentials whose password is the operator's access key. The access key is
-then the only barrier between the internet and test execution.
+public origin is accepted in Origin, and every request must carry the
+operator's access key in the X-PatchPilot-Access-Key header (the frontend asks
+for it on its own sign-in screen). The access key is then the only barrier
+between the internet and test execution.
 """
 
 from __future__ import annotations
 
-import base64
-import binascii
 import hmac
 from collections.abc import Iterable
 from typing import Any
@@ -36,7 +35,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 SESSION_HEADER = "x-patchpilot-session"
 SESSION_PATH = "/api/session"
-ACCESS_REALM = "PatchPilot"
+ACCESS_HEADER = "x-patchpilot-access-key"
 
 CONTENT_SECURITY_POLICY = "; ".join(
     (
@@ -82,19 +81,6 @@ def _with_security_headers(send: Send, *, api: bool) -> Send:
     return wrapped
 
 
-def _basic_password(header: str) -> bytes | None:
-    """The password from an "Authorization: Basic" header; None if absent or malformed."""
-    scheme, _, encoded = header.partition(" ")
-    if scheme.lower() != "basic" or not encoded.strip():
-        return None
-    try:
-        decoded = base64.b64decode(encoded.strip(), validate=True)
-    except (binascii.Error, ValueError):
-        return None
-    _, sep, password = decoded.partition(b":")
-    return password if sep else None
-
-
 class LocalGuard:
     """ASGI middleware applying the checks above to every HTTP request."""
 
@@ -129,8 +115,7 @@ class LocalGuard:
         refusal = self._refusal(scope, Headers(scope=scope), api=api)
         if refusal is not None:
             status, code, message = refusal
-            headers = {"www-authenticate": f'Basic realm="{ACCESS_REALM}", charset="UTF-8"'} if status == 401 else None
-            response = JSONResponse({"error": {"code": code, "message": message}}, status_code=status, headers=headers)
+            response = JSONResponse({"error": {"code": code, "message": message}}, status_code=status)
             await response(scope, receive, send)
             return
         await self.app(scope, receive, send)
@@ -139,8 +124,8 @@ class LocalGuard:
         if headers.get("host", "").lower() not in self.hosts:
             return 400, "host_not_allowed", "this PatchPilot server only answers requests addressed to its loopback address"
         if self._access_key is not None:
-            supplied_key = _basic_password(headers.get("authorization", ""))
-            if supplied_key is None or not hmac.compare_digest(supplied_key, self._access_key):
+            supplied_key = headers.get(ACCESS_HEADER, "").encode()
+            if not hmac.compare_digest(supplied_key, self._access_key):
                 return 401, "access_key_required", "this PatchPilot server needs its access key"
         if not api:
             return None

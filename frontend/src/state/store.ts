@@ -2,7 +2,7 @@
 // which runs belong to the current journey and two local preferences.
 
 import { useEffect, useRef, useState } from "preact/hooks";
-import { type ApiResult, api, startSession, streamRun } from "../api/client.ts";
+import { type ApiResult, api, hasAccessKey, setAccessKey, startSession, streamRun } from "../api/client.ts";
 import type { ApiError, ConfigView, RepoView, Run, RunKind, RunSummary, RuntimeReport, Session } from "../api/types.ts";
 
 export type Slot = "investigation" | "patchCheck" | "patchApply" | "probe";
@@ -11,6 +11,9 @@ export type Motion = "system" | "reduce" | "full";
 export type AppState = {
   session: Session | null;
   sessionError: ApiError | null;
+  // "required": the server is in public mode and wants its access key.
+  // "rejected": a key was entered and the server refused it.
+  access: "ok" | "required" | "rejected";
   config: ConfigView | null;
   configError: ApiError | null;
   runtime: { checking: boolean; report: RuntimeReport | null; error: ApiError | null };
@@ -64,6 +67,7 @@ const initialMotion = stored(MOTION_KEY);
 let state: AppState = {
   session: null,
   sessionError: null,
+  access: "ok",
   config: null,
   configError: null,
   runtime: { checking: false, report: null, error: null },
@@ -162,14 +166,25 @@ export async function boot(): Promise<void> {
   applyMotion(state.motion);
   const session = await startSession();
   if (!session.ok) {
+    if (session.status === 401 && session.error.code === "access_key_required") {
+      const rejected = hasAccessKey();
+      setAccessKey(null);
+      setState({ access: rejected ? "rejected" : "required", sessionError: null });
+      return;
+    }
     setState({ sessionError: session.error });
     return;
   }
-  setState({ session: session.data, sessionError: null });
+  setState({ session: session.data, sessionError: null, access: "ok" });
   await loadConfig();
   void loadRepos();
   void checkRuntime();
   void restoreJourney();
+}
+
+export async function signIn(key: string): Promise<void> {
+  setAccessKey(key);
+  await boot();
 }
 
 // --------------------------------------------------------------------------

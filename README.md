@@ -743,8 +743,10 @@ and redeployed after a restart.
 - `--public-origin` is added to the accepted `Origin` values. It must be a bare
   `https` origin.
 - `--public-origin` refuses to start without `PATCHPILOT_ACCESS_KEY` (at least
-  24 characters, environment only). Every request then needs it as an HTTP
-  Basic password; the browser asks once. The session header is still required.
+  24 characters, environment only). Every request then needs it in the
+  `X-PatchPilot-Access-Key` header. The frontend asks for it on its own sign-in
+  screen and keeps it in `sessionStorage` for the tab. The session header is
+  still required.
 - The access key is the only barrier between the internet and test execution:
   anyone with it can apply a patch and run the configured tests, which runs
   repository code with the operator's permissions.

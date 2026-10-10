@@ -4,7 +4,41 @@
 import type { ApiError, Run, RunEvent, Session } from "./types.ts";
 
 const SESSION_HEADER = "X-PatchPilot-Session";
+// Sent only to a server started in public mode (--public-origin); a local
+// server ignores it. Kept for this tab only.
+const ACCESS_HEADER = "X-PatchPilot-Access-Key";
+const ACCESS_KEY_STORAGE = "patchpilot.accessKey";
 let token: string | null = null;
+let accessKey: string | null = readAccessKey();
+
+function readAccessKey(): string | null {
+  try {
+    return sessionStorage.getItem(ACCESS_KEY_STORAGE);
+  } catch {
+    return null;
+  }
+}
+
+export function setAccessKey(key: string | null): void {
+  accessKey = key;
+  try {
+    if (key === null) sessionStorage.removeItem(ACCESS_KEY_STORAGE);
+    else sessionStorage.setItem(ACCESS_KEY_STORAGE, key);
+  } catch {
+    /* storage unavailable: the key lasts for this page only */
+  }
+}
+
+export function hasAccessKey(): boolean {
+  return accessKey !== null;
+}
+
+function authHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (token) headers[SESSION_HEADER] = token;
+  if (accessKey) headers[ACCESS_HEADER] = accessKey;
+  return headers;
+}
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; error: ApiError };
 
@@ -15,8 +49,7 @@ const UNREACHABLE: ApiError = {
 };
 
 async function send<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<ApiResult<T>> {
-  const headers: Record<string, string> = {};
-  if (token) headers[SESSION_HEADER] = token;
+  const headers = authHeaders();
   if (body !== undefined) headers["Content-Type"] = "application/json";
   let response: Response;
   try {
@@ -70,7 +103,7 @@ export async function streamRun(runId: string, after: number, onMessage: (messag
   let response: Response;
   try {
     response = await fetch(`/api/runs/${encodeURIComponent(runId)}/events?after=${after}`, {
-      headers: token ? { [SESSION_HEADER]: token } : {},
+      headers: authHeaders(),
       cache: "no-store",
     });
   } catch {

@@ -57,7 +57,7 @@ def test_public_mode_serves_behind_the_access_key(tmp_path):
         url = proc.stdout.readline().split(": ", 1)[1].strip()
         assert "https://ui.example.dev may drive" in proc.stdout.readline()
         assert httpx.get(f"{url}/api/session", timeout=10).status_code == 401
-        session = httpx.get(f"{url}/api/session", auth=("patchpilot", key), timeout=10)
+        session = httpx.get(f"{url}/api/session", headers={"X-PatchPilot-Access-Key": key}, timeout=10)
         assert session.status_code == 200
     finally:
         proc.terminate()

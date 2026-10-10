@@ -15,7 +15,7 @@ PATCHPILOT_AGENT_ID, PATCHPILOT_USER_ID) are read from the environment and the
 --public-origin lets a hosted copy of the frontend at that origin drive this
 server through a tunnel that forwards to the loopback listener with a loopback
 Host header. It requires PATCHPILOT_ACCESS_KEY in the process environment;
-every request must then carry it as an HTTP Basic password (web/guard.py).
+every request must then carry it in X-PatchPilot-Access-Key (web/guard.py).
 """
 
 from __future__ import annotations

@@ -1,0 +1,10 @@
+.form {
+  display: grid;
+  gap: var(--s4);
+  max-width: 32rem;
+  margin-top: var(--s5);
+}
+
+.actions {
+  display: flex;
+}

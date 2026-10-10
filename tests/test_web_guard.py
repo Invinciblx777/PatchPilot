@@ -10,7 +10,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from .web_helpers import SESSION_HEADER, make_settings, serve_web
+from .web_helpers import ACCESS_HEADER, SESSION_HEADER, make_settings, serve_web
 
 
 @pytest.fixture
@@ -104,15 +104,16 @@ def test_public_mode_needs_the_access_key_everywhere(public_web, path):
     bare = httpx.Client(base_url=public_web.base_url)
     response = bare.get(path)
     assert response.status_code == 401
-    assert response.headers["www-authenticate"].startswith('Basic realm="PatchPilot"')
-    assert bare.get(path, auth=("patchpilot", "wrong-key-" * 4)).status_code == 401
-    assert bare.get(path, headers={"Authorization": "Basic !!!not-base64"}).status_code == 401
-    assert bare.get(path, headers={"Authorization": f"Bearer {ACCESS_KEY}"}).status_code == 401
-    assert bare.get(path, auth=("anyone", ACCESS_KEY)).status_code != 401
+    assert response.json()["error"]["code"] == "access_key_required"
+    # No WWW-Authenticate: the browser must not raise its own sign-in dialog.
+    assert "www-authenticate" not in response.headers
+    assert bare.get(path, headers={ACCESS_HEADER: "wrong-key-" * 4}).status_code == 401
+    assert bare.get(path, auth=("patchpilot", ACCESS_KEY)).status_code == 401
+    assert bare.get(path, headers={ACCESS_HEADER: ACCESS_KEY}).status_code != 401
 
 
 def test_public_mode_still_needs_the_session_token(public_web):
-    keyed = httpx.Client(base_url=public_web.base_url, auth=("patchpilot", ACCESS_KEY))
+    keyed = httpx.Client(base_url=public_web.base_url, headers={ACCESS_HEADER: ACCESS_KEY})
     assert keyed.get("/api/config").status_code == 403
     assert public_web.get("/api/config").status_code == 200
 
@@ -136,7 +137,7 @@ def test_public_origin_without_an_access_key_is_refused():
         LocalGuard(None, port=1, token="t", public_origins=(PUBLIC_ORIGIN,))
 
 
-def test_default_mode_ignores_basic_credentials(web):
+def test_default_mode_ignores_the_access_header(web):
     # Without --public-origin there is no access key and nothing changes.
     assert httpx.get(f"{web.base_url}/api/session").status_code == 200
-    assert "www-authenticate" not in web.get("/api/config").headers
+    assert web.get("/api/config", headers={ACCESS_HEADER: "anything"}).status_code == 200
