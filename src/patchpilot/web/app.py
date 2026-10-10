@@ -95,7 +95,13 @@ npm --prefix frontend run build</pre></main></body></html>
 Starter = Callable[[dict[str, Any]], tuple[str | None, str, dict[str, Any], Callable[[Run], Awaitable[None]]]]
 
 
-def create_app(settings: UISettings, *, port: int) -> Starlette:
+def create_app(
+    settings: UISettings,
+    *,
+    port: int,
+    public_origins: tuple[str, ...] = (),
+    access_key: str | None = None,
+) -> Starlette:
     token = secrets.token_urlsafe(32)
     started_at = utc_now()
     registry = RunRegistry()
@@ -243,7 +249,9 @@ def create_app(settings: UISettings, *, port: int) -> Starlette:
     routes.append(Route("/{rest:path}", index, methods=["GET"]))
     return Starlette(
         routes=routes,
-        middleware=[Middleware(LocalGuard, port=port, token=token)],
+        middleware=[
+            Middleware(LocalGuard, port=port, token=token, public_origins=public_origins, access_key=access_key)
+        ],
         exception_handlers={RequestError: request_error},
         lifespan=lifespan,
     )

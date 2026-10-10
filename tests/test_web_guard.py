@@ -87,3 +87,56 @@ def test_unknown_api_path_is_a_json_404(web):
     response = web.get("/api/nope")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "not_found"
+
+
+PUBLIC_ORIGIN = "https://ui.example.dev"
+ACCESS_KEY = "k" * 32
+
+
+@pytest.fixture
+def public_web():
+    with serve_web(make_settings(), public_origins=(PUBLIC_ORIGIN,), access_key=ACCESS_KEY) as app:
+        yield app
+
+
+@pytest.mark.parametrize("path", ["/api/session", "/api/config", "/"])
+def test_public_mode_needs_the_access_key_everywhere(public_web, path):
+    bare = httpx.Client(base_url=public_web.base_url)
+    response = bare.get(path)
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"].startswith('Basic realm="PatchPilot"')
+    assert bare.get(path, auth=("patchpilot", "wrong-key-" * 4)).status_code == 401
+    assert bare.get(path, headers={"Authorization": "Basic !!!not-base64"}).status_code == 401
+    assert bare.get(path, headers={"Authorization": f"Bearer {ACCESS_KEY}"}).status_code == 401
+    assert bare.get(path, auth=("anyone", ACCESS_KEY)).status_code != 401
+
+
+def test_public_mode_still_needs_the_session_token(public_web):
+    keyed = httpx.Client(base_url=public_web.base_url, auth=("patchpilot", ACCESS_KEY))
+    assert keyed.get("/api/config").status_code == 403
+    assert public_web.get("/api/config").status_code == 200
+
+
+def test_public_mode_accepts_only_its_own_public_origin(public_web):
+    proxied = {"Origin": PUBLIC_ORIGIN, "Sec-Fetch-Site": "same-origin"}
+    assert public_web.post("/api/runs", {"kind": "nope"}, headers=proxied).status_code == 400  # past the guard
+    evil = public_web.post("/api/runs", {"kind": "nope"}, headers={"Origin": "https://attacker.example"})
+    assert evil.status_code == 403
+
+
+def test_public_mode_keeps_the_loopback_host_check(public_web):
+    response = public_web.get("/api/config", headers={"Host": "ui.example.dev"})
+    assert response.status_code == 400
+
+
+def test_public_origin_without_an_access_key_is_refused():
+    from patchpilot.web.guard import LocalGuard
+
+    with pytest.raises(ValueError):
+        LocalGuard(None, port=1, token="t", public_origins=(PUBLIC_ORIGIN,))
+
+
+def test_default_mode_ignores_basic_credentials(web):
+    # Without --public-origin there is no access key and nothing changes.
+    assert httpx.get(f"{web.base_url}/api/session").status_code == 200
+    assert "www-authenticate" not in web.get("/api/config").headers

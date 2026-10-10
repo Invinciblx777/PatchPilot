@@ -27,6 +27,43 @@ def _run(argv):
     return code, out.getvalue(), err.getvalue()
 
 
+@pytest.mark.parametrize(
+    "origin", ["http://ui.example.dev", "https://", "https://ui.example.dev/app", "https://ui.example.dev/?x=1", "ui.example.dev"]
+)
+def test_public_origin_must_be_a_bare_https_origin(origin):
+    out, err = io.StringIO(), io.StringIO()
+    code = run(["--public-origin", origin, "--port", "0"], environ={"PATCHPILOT_ACCESS_KEY": "k" * 32}, stdout=out, stderr=err)
+    assert code == 2 and "--public-origin must be an https origin" in err.getvalue()
+
+
+@pytest.mark.parametrize("key", [None, "", "short-key"])
+def test_public_origin_needs_a_long_access_key(key):
+    environ = {} if key is None else {"PATCHPILOT_ACCESS_KEY": key}
+    out, err = io.StringIO(), io.StringIO()
+    code = run(["--public-origin", "https://ui.example.dev", "--port", "0"], environ=environ, stdout=out, stderr=err)
+    assert code == 2 and "PATCHPILOT_ACCESS_KEY" in err.getvalue()
+
+
+def test_public_mode_serves_behind_the_access_key(tmp_path):
+    key = "k" * 32
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("AGNTID_", "PATCHPILOT_"))}
+    env["PATCHPILOT_ACCESS_KEY"] = key
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "patchpilot.ui_cli", "--port", "0", "--env-file", str(tmp_path / "none.env"),
+         "--public-origin", "https://UI.example.dev/"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env, cwd=tmp_path,
+    )
+    try:
+        url = proc.stdout.readline().split(": ", 1)[1].strip()
+        assert "https://ui.example.dev may drive" in proc.stdout.readline()
+        assert httpx.get(f"{url}/api/session", timeout=10).status_code == 401
+        session = httpx.get(f"{url}/api/session", auth=("patchpilot", key), timeout=10)
+        assert session.status_code == 200
+    finally:
+        proc.terminate()
+        proc.wait(timeout=20)
+
+
 @pytest.mark.parametrize("host", ["0.0.0.0", "192.168.1.10", "example.com", "::"])
 def test_non_loopback_hosts_are_refused(host):
     code, _, err = _run(["--host", host, "--port", "0"])

@@ -9,6 +9,13 @@ repository and approve or decline the configured commands; it can never add a
 path, a command, or a policy exception. AgntID settings (AGNTID_*,
 PATCHPILOT_AGENT_ID, PATCHPILOT_USER_ID) are read from the environment and the
 .env file for every operation, as the other commands do.
+
+    PATCHPILOT_ACCESS_KEY=... patchpilot-ui --repo ~/src/project --public-origin https://ui.example.dev
+
+--public-origin lets a hosted copy of the frontend at that origin drive this
+server through a tunnel that forwards to the loopback listener with a loopback
+Host header. It requires PATCHPILOT_ACCESS_KEY in the process environment;
+every request must then carry it as an HTTP Basic password (web/guard.py).
 """
 
 from __future__ import annotations
@@ -20,6 +27,7 @@ import sys
 from collections.abc import Mapping
 from pathlib import Path
 from typing import TextIO
+from urllib.parse import urlsplit
 
 from patchpilot._warnings import silence_authlib_deprecations
 
@@ -43,6 +51,8 @@ STATIC_DIR = Path(patchpilot.web.__file__).parent / "static"
 # Hosts the guard accepts in the Host header (web/guard.py). Binding anything
 # else would expose test execution beyond this machine, so it is refused.
 LOOPBACK_HOSTS = {"127.0.0.1": socket.AF_INET, "localhost": socket.AF_INET, "::1": socket.AF_INET6}
+ACCESS_KEY_ENV = "PATCHPILOT_ACCESS_KEY"
+MIN_ACCESS_KEY_LENGTH = 24
 
 
 class UsageError(Exception):
@@ -67,7 +77,27 @@ def build_parser() -> argparse.ArgumentParser:
                         help="timeout in seconds for each --test-command (default: 600)")
     parser.add_argument("--allow-sensitive-path", action="append", default=[], metavar="PATTERN",
                         help="allow paths matching PATTERN despite the sensitive-path default deny")
+    parser.add_argument("--public-origin", action="append", default=[], metavar="URL",
+                        help=f"https origin of a hosted frontend that proxies /api here (repeatable; needs ${ACCESS_KEY_ENV})")
     return parser
+
+
+def public_access(args: argparse.Namespace, environ: Mapping[str, str]) -> tuple[tuple[str, ...], str | None]:
+    """Normalized --public-origin values and the access key they require."""
+    origins: list[str] = []
+    for raw in args.public_origin:
+        parts = urlsplit(raw)
+        if parts.scheme != "https" or not parts.hostname or parts.path not in ("", "/") or parts.query or parts.fragment:
+            raise UsageError(f"--public-origin must be an https origin such as https://ui.example.dev; got {raw!r}")
+        origins.append(f"https://{parts.netloc.lower()}")
+    if not origins:
+        return (), None
+    key = environ.get(ACCESS_KEY_ENV, "")
+    if len(key) < MIN_ACCESS_KEY_LENGTH:
+        raise UsageError(
+            f"--public-origin needs ${ACCESS_KEY_ENV} of at least {MIN_ACCESS_KEY_LENGTH} characters in the environment"
+        )
+    return tuple(dict.fromkeys(origins)), key
 
 
 def build_settings(args: argparse.Namespace, environ: Mapping[str, str]) -> UISettings:
@@ -126,8 +156,10 @@ def run(
 ) -> int:
     args = build_parser().parse_args(argv)
     stdout, stderr = stdout or sys.stdout, stderr or sys.stderr
+    environ = os.environ if environ is None else environ
     try:
-        settings = build_settings(args, os.environ if environ is None else environ)
+        settings = build_settings(args, environ)
+        public_origins, access_key = public_access(args, environ)
         sock = _listen(args.host, args.port)
     except UsageError as error:
         stderr.write(f"patchpilot-ui: {error}\n")
@@ -137,8 +169,12 @@ def run(
     stdout.write(f"PatchPilot UI: http://{host}:{port}\n")
     if settings.tests:
         stdout.write("Test commands run repository code with your permissions; this is not an OS sandbox.\n")
+    if public_origins:
+        stdout.write(f"Public mode: {', '.join(public_origins)} may drive this server with the access key.\n")
+        stdout.write(f"Tunnel to 127.0.0.1:{port} and send Host: 127.0.0.1:{port} upstream.\n")
     stdout.flush()
-    server = uvicorn.Server(uvicorn.Config(create_app(settings, port=port), log_level="warning", lifespan="on"))
+    app = create_app(settings, port=port, public_origins=public_origins, access_key=access_key)
+    server = uvicorn.Server(uvicorn.Config(app, log_level="warning", lifespan="on"))
     try:
         server.run(sockets=[sock])
     finally:

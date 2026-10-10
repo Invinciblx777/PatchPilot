@@ -722,6 +722,33 @@ able to drive it:
 - The browser never receives `AGNTID_ACCESS_TOKEN` or any other secret; the
   configuration view reports only whether a token is supplied.
 
+### Hosted frontend (public mode)
+
+The frontend can be hosted on Vercel (`frontend/vercel.json`) and proxy
+`/api/*` to a backend on the operator's machine through a tunnel:
+
+```bash
+PATCHPILOT_ACCESS_KEY="$(cat ~/.config/patchpilot/access-key)" \
+  patchpilot-ui --port 8766 --repo ~/patchpilot-demo-repo \
+  --test-command "python3 -m unittest -v" --public-origin https://tech.runs-on.dev
+cloudflared tunnel --no-autoupdate --url http://127.0.0.1:8766 --http-host-header 127.0.0.1:8766
+```
+
+The tunnel URL goes into the `/api/:path*` rewrite in `frontend/vercel.json`.
+A quick tunnel gets a new URL on every start, so the rewrite must be updated
+and redeployed after a restart.
+
+- The listener stays on loopback. The tunnel must rewrite `Host` to the
+  loopback address, so the Host check still applies.
+- `--public-origin` is added to the accepted `Origin` values. It must be a bare
+  `https` origin.
+- `--public-origin` refuses to start without `PATCHPILOT_ACCESS_KEY` (at least
+  24 characters, environment only). Every request then needs it as an HTTP
+  Basic password; the browser asks once. The session header is still required.
+- The access key is the only barrier between the internet and test execution:
+  anyone with it can apply a patch and run the configured tests, which runs
+  repository code with the operator's permissions.
+
 ### Tests
 
 ```bash

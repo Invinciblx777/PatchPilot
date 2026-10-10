@@ -113,10 +113,12 @@ def _free_socket() -> socket.socket:
 
 
 @contextmanager
-def serve_web(settings: UISettings) -> Iterator[WebApp]:
+def serve_web(
+    settings: UISettings, *, public_origins: tuple[str, ...] = (), access_key: str | None = None
+) -> Iterator[WebApp]:
     sock = _free_socket()
     port = sock.getsockname()[1]
-    app = create_app(settings, port=port)
+    app = create_app(settings, port=port, public_origins=public_origins, access_key=access_key)
     server = uvicorn.Server(uvicorn.Config(app, log_level="warning", lifespan="on"))
     thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
     thread.start()
@@ -126,8 +128,9 @@ def serve_web(settings: UISettings) -> Iterator[WebApp]:
             raise RuntimeError("web app did not start")
         time.sleep(0.02)
     base_url = f"http://127.0.0.1:{port}"
-    token = httpx.get(f"{base_url}/api/session").json()["token"]
-    http = httpx.Client(base_url=base_url, headers={SESSION_HEADER: token}, timeout=60)
+    auth = None if access_key is None else httpx.BasicAuth("patchpilot", access_key)
+    token = httpx.get(f"{base_url}/api/session", auth=auth).json()["token"]
+    http = httpx.Client(base_url=base_url, headers={SESSION_HEADER: token}, auth=auth, timeout=60)
     try:
         yield WebApp(base_url=base_url, port=port, token=token, http=http)
     finally:

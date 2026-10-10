@@ -13,11 +13,21 @@ must not be able to drive it. Every request is checked before routing:
 There is no CORS support at all: a cross-origin page can neither read
 /api/session nor send the session header without a preflight, and a preflight
 is never approved.
+
+Public mode (patchpilot-ui --public-origin) is for a hosted frontend that
+proxies /api to this server through a tunnel. The listener stays on loopback
+and the tunnel must present a loopback Host header. Two things change: the
+public origin is accepted in Origin, and every request must carry HTTP Basic
+credentials whose password is the operator's access key. The access key is
+then the only barrier between the internet and test execution.
 """
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hmac
+from collections.abc import Iterable
 from typing import Any
 
 from starlette.datastructures import Headers, MutableHeaders
@@ -26,6 +36,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 SESSION_HEADER = "x-patchpilot-session"
 SESSION_PATH = "/api/session"
+ACCESS_REALM = "PatchPilot"
 
 CONTENT_SECURITY_POLICY = "; ".join(
     (
@@ -71,14 +82,39 @@ def _with_security_headers(send: Send, *, api: bool) -> Send:
     return wrapped
 
 
+def _basic_password(header: str) -> bytes | None:
+    """The password from an "Authorization: Basic" header; None if absent or malformed."""
+    scheme, _, encoded = header.partition(" ")
+    if scheme.lower() != "basic" or not encoded.strip():
+        return None
+    try:
+        decoded = base64.b64decode(encoded.strip(), validate=True)
+    except (binascii.Error, ValueError):
+        return None
+    _, sep, password = decoded.partition(b":")
+    return password if sep else None
+
+
 class LocalGuard:
     """ASGI middleware applying the checks above to every HTTP request."""
 
-    def __init__(self, app: ASGIApp, *, port: int, token: str):
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        port: int,
+        token: str,
+        public_origins: Iterable[str] = (),
+        access_key: str | None = None,
+    ):
+        public_origins = frozenset(public_origins)
+        if public_origins and not access_key:
+            raise ValueError("a public origin needs an access key")
         self.app = app
         self.hosts = loopback_hosts(port)
-        self.origins = frozenset(f"http://{host}" for host in self.hosts)
+        self.origins = frozenset(f"http://{host}" for host in self.hosts) | public_origins
         self._token = token.encode()
+        self._access_key = access_key.encode() if access_key else None
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "websocket":
@@ -93,7 +129,8 @@ class LocalGuard:
         refusal = self._refusal(scope, Headers(scope=scope), api=api)
         if refusal is not None:
             status, code, message = refusal
-            response = JSONResponse({"error": {"code": code, "message": message}}, status_code=status)
+            headers = {"www-authenticate": f'Basic realm="{ACCESS_REALM}", charset="UTF-8"'} if status == 401 else None
+            response = JSONResponse({"error": {"code": code, "message": message}}, status_code=status, headers=headers)
             await response(scope, receive, send)
             return
         await self.app(scope, receive, send)
@@ -101,6 +138,10 @@ class LocalGuard:
     def _refusal(self, scope: Scope, headers: Headers, *, api: bool) -> tuple[int, str, str] | None:
         if headers.get("host", "").lower() not in self.hosts:
             return 400, "host_not_allowed", "this PatchPilot server only answers requests addressed to its loopback address"
+        if self._access_key is not None:
+            supplied_key = _basic_password(headers.get("authorization", ""))
+            if supplied_key is None or not hmac.compare_digest(supplied_key, self._access_key):
+                return 401, "access_key_required", "this PatchPilot server needs its access key"
         if not api:
             return None
         method: Any = scope["method"]
