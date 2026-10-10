@@ -1,0 +1,71 @@
+.list {
+  list-style: none;
+  display: grid;
+  gap: 0;
+  border-top: var(--hairline);
+}
+
+.row {
+  display: grid;
+  gap: 6px;
+  padding: var(--s4) 0;
+  border-bottom: var(--hairline);
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2) var(--s4);
+}
+
+.name {
+  font-weight: 600;
+}
+
+.facts {
+  display: inline-flex;
+  gap: var(--s4);
+  margin-left: auto;
+  color: var(--graphite);
+  font-size: var(--text-sm);
+}
+
+.facts strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.argv {
+  color: var(--graphite);
+  overflow-wrap: anywhere;
+}
+
+.note {
+  font-size: var(--text-sm);
+  color: var(--warn);
+}
+
+.output summary {
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--graphite);
+  width: fit-content;
+}
+
+.output summary:hover {
+  color: var(--ink);
+}
+
+.output pre {
+  margin-top: var(--s2);
+  padding: var(--s3);
+  max-height: 340px;
+  overflow: auto;
+  background: var(--panel);
+  border: var(--hairline);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  white-space: pre;
+}

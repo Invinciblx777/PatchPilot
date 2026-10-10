@@ -1,0 +1,51 @@
+.strip {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--s3) var(--s5);
+  padding-bottom: var(--s4);
+  border-bottom: var(--hairline);
+}
+
+.cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s6);
+  min-width: 0;
+}
+
+.cell {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.cell dt {
+  font-size: var(--text-xs);
+  color: var(--graphite);
+}
+
+.cell dd {
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.cell code {
+  font-size: var(--text-sm);
+}
+
+.error {
+  grid-column: 1 / -1;
+  color: var(--warn);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 720px) {
+  .strip {
+    grid-template-columns: 1fr;
+  }
+
+  .strip > button {
+    justify-self: start;
+  }
+}

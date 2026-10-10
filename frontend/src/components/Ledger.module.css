@@ -1,0 +1,142 @@
+.ledger {
+  padding: var(--s5);
+  background: var(--panel);
+  display: grid;
+  gap: var(--s5);
+}
+
+.header {
+  display: flex;
+  gap: var(--s4);
+  align-items: center;
+}
+
+.title {
+  font-size: 22px;
+}
+
+.sub {
+  color: var(--graphite);
+  font-size: var(--text-sm);
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  display: grid;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(130px, 38%) 1fr;
+  gap: var(--s4);
+  padding: 11px 0;
+  border-top: var(--hairline);
+}
+
+.row dt {
+  color: var(--graphite);
+  font-size: var(--text-sm);
+  padding-top: 1px;
+}
+
+.row dd {
+  display: grid;
+  gap: var(--s2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.emphasis {
+  padding: var(--s4) 0;
+}
+
+.emphasis dd > span:first-child {
+  font-size: var(--text-lg);
+}
+
+.stamp {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.when {
+  font-size: var(--text-xs);
+  color: var(--pencil);
+}
+
+.denial {
+  display: grid;
+  gap: 4px;
+  padding: var(--s2) var(--s3);
+  border-left: 2px solid var(--deny);
+  background: var(--deny-wash);
+  font-size: var(--text-sm);
+}
+
+.denial div {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: var(--s2);
+}
+
+.denial dt {
+  color: var(--graphite);
+}
+
+.checks {
+  border-top: 1px dashed var(--rule-strong);
+  padding-top: var(--s4);
+  display: grid;
+  gap: var(--s3);
+}
+
+.checksHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+}
+
+.checksHead h3 {
+  font-size: var(--text-sm);
+  color: var(--graphite);
+  font-weight: 600;
+}
+
+.aside {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--marker);
+  font-size: 15px;
+  transform: rotate(-1.5deg);
+}
+
+.aside svg {
+  width: 30px;
+  height: 18px;
+}
+
+.checks ul {
+  list-style: none;
+  display: grid;
+  gap: var(--s2);
+  font-size: var(--text-sm);
+}
+
+.problem {
+  margin: 2px 0 0 23px;
+  color: var(--warn);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 520px) {
+  .row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

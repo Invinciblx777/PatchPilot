@@ -1,0 +1,72 @@
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 560;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.label {
+  min-width: 0;
+}
+
+.glyph {
+  flex: none;
+  display: block;
+}
+
+.allow {
+  color: var(--allow);
+}
+
+.deny {
+  color: var(--deny);
+}
+
+.warn {
+  color: var(--warn);
+}
+
+.ink {
+  color: var(--ink);
+}
+
+.pencil {
+  color: var(--graphite);
+}
+
+.pencil .glyph,
+.glyph.pencil {
+  color: var(--pencil);
+}
+
+.marker {
+  color: var(--marker);
+}
+
+.quiet {
+  color: var(--graphite);
+}
+
+.spin {
+  animation: spin 1.1s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+:root[data-motion="reduce"] .spin {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) .spin {
+    animation: none;
+  }
+}
+
+/* Local to this module: CSS Modules scope keyframe names. */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

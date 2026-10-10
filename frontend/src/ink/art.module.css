@@ -1,0 +1,203 @@
+.art {
+  display: block;
+  overflow: visible;
+  flex: none;
+}
+
+.ink,
+.pencil,
+.badge {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ink {
+  stroke: var(--ink);
+  stroke-width: 1.6;
+}
+
+.retrace {
+  stroke-width: 0.9;
+  stroke-opacity: 0.4;
+}
+
+.pencil {
+  stroke: var(--pencil);
+  stroke-width: 1.1;
+}
+
+.fill {
+  fill: var(--ink);
+}
+
+.dashedLine {
+  stroke-dasharray: 5 4;
+}
+
+.badge circle {
+  fill: var(--stock);
+  stroke-width: 1.6;
+}
+
+.badge path {
+  stroke-width: 2;
+}
+
+.badge .dot {
+  fill: currentColor;
+  stroke: none;
+}
+
+.badge .dashed {
+  stroke-dasharray: 3 3;
+}
+
+.badge.allowed {
+  stroke: var(--allow);
+  color: var(--allow);
+}
+
+.badge.denied {
+  stroke: var(--deny);
+  color: var(--deny);
+}
+
+.badge.review,
+.badge.unknown {
+  stroke: var(--warn);
+  color: var(--warn);
+}
+
+.badge.not_observed {
+  stroke: var(--pencil);
+}
+
+/* Ink draw-on: each stroke is normalised with pathLength="1". */
+.draw path,
+.draw circle {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw var(--t-draw) var(--ease) forwards;
+}
+
+.draw .pencil path,
+.draw .pencil circle {
+  animation-delay: calc(var(--t-draw) * 0.45);
+}
+
+.draw .dashedLine {
+  stroke-dasharray: 5 4;
+  stroke-dashoffset: 0;
+  animation: none;
+}
+
+.draw .badge path,
+.draw .badge circle {
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  animation: none;
+}
+
+.draw .badge path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw calc(var(--t-draw) * 0.6) var(--ease) calc(var(--t-draw) * 0.5) forwards;
+}
+
+.mark {
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+.markEdge {
+  fill: var(--raised);
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.markStitch {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+  stroke-dasharray: 1.6 1.7;
+}
+
+.markThread {
+  fill: none;
+  stroke: var(--marker);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.stamp {
+  display: block;
+  width: 136px;
+  height: 46px;
+  transform: rotate(-4deg);
+  transform-origin: 50% 50%;
+  animation: stamp-in calc(var(--t) * 1.4) var(--ease) both;
+}
+
+.stamp.allowed {
+  color: var(--allow);
+}
+
+.stamp.denied {
+  color: var(--deny);
+}
+
+.stamp.review {
+  color: var(--warn);
+}
+
+.stampOuter,
+.stampInner {
+  fill: none;
+  stroke: currentColor;
+}
+
+.stampOuter {
+  stroke-width: 2.4;
+}
+
+.stampInner {
+  stroke-width: 1;
+}
+
+.stampText {
+  fill: currentColor;
+  font-family: var(--font-sans);
+  font-stretch: 78%;
+  font-weight: 780;
+  font-size: 17px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: rotate(-9deg) scale(1.35);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-4deg) scale(1);
+  }
+}
+
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Local to this module: CSS Modules scope keyframe names. */
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}

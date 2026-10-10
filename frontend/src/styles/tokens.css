@@ -1,0 +1,85 @@
+/*
+ * PatchPilot design tokens: white gel-pen ink on black stock, one orange
+ * paint marker for the operator's own actions, stamp inks for real AgntID
+ * decisions. Every colour below has a job; nothing is decorative.
+ */
+:root {
+  /* Stock and surfaces */
+  --stock: #0b0b0a;
+  --panel: #121211;
+  --raised: #191918;
+  --hover: #222220;
+
+  /* Ink */
+  --ink: #f2f0e9;
+  --graphite: #a6a39a; /* secondary text, 7.6:1 on stock */
+  --pencil: #85827a; /* tertiary text and line numbers, 5.0:1 on stock */
+  --rule: #34332f;
+  --rule-strong: #4a4843;
+
+  /* The operator's marker: selected navigation, primary actions, margin notes */
+  --marker: #e2793a;
+  --marker-soft: rgb(226 121 58 / 0.14);
+  --on-marker: #0b0b0a;
+
+  /* Stamp inks: used only for outcomes that really happened */
+  --allow: #54c99a;
+  --deny: #f07167;
+  --warn: #e3b66a;
+  --allow-wash: rgb(84 201 154 / 0.09);
+  --deny-wash: rgb(240 113 103 / 0.09);
+  --warn-wash: rgb(227 182 106 / 0.09);
+
+  /* Type */
+  --font-sans: "Archivo Variable", "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Commit Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-hand: "Shantell Sans Variable", "Shantell Sans", "Comic Neue", cursive;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 24px;
+  --text-display: clamp(32px, 2.4vw + 18px, 44px);
+
+  /* Spacing (4px base) */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+
+  /* Shape */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --hairline: 1px solid var(--rule);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-fast: 120ms;
+  --t: 180ms;
+  --t-draw: 760ms;
+
+  /* Layout */
+  --header-h: 52px;
+  --nav-w: 212px;
+  --content-max: 1240px;
+}
+
+/* In-app "Reduce motion" choice, or the system preference when set to follow it. */
+:root[data-motion="reduce"] {
+  --t-fast: 0ms;
+  --t: 0ms;
+  --t-draw: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) {
+    --t-fast: 0ms;
+    --t: 0ms;
+    --t-draw: 0ms;
+  }
+}

@@ -1,0 +1,270 @@
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--s7);
+  align-items: start;
+}
+
+.framed {
+  position: relative;
+  padding: var(--s5);
+}
+
+.intake {
+  display: grid;
+  gap: var(--s5);
+}
+
+.intakeHead {
+  display: grid;
+  gap: var(--s3);
+}
+
+.form {
+  display: grid;
+  gap: var(--s4);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--s4);
+  align-items: start;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3) var(--s4);
+}
+
+.linkButton {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--graphite);
+  font-size: var(--text-xs);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.linkButton:hover {
+  color: var(--ink);
+}
+
+.result {
+  display: grid;
+  gap: var(--s3);
+  padding-top: var(--s4);
+  border-top: var(--hairline);
+}
+
+.resultLabel {
+  font-size: var(--text-sm);
+  color: var(--graphite);
+}
+
+.issueTitle {
+  font-size: var(--text-lg);
+  font-weight: 620;
+}
+
+.issueBody {
+  white-space: pre-wrap;
+  max-height: 280px;
+  overflow: auto;
+  color: #d9d6cd;
+  font-size: var(--text-sm);
+}
+
+.summaryLink {
+  cursor: pointer;
+  width: fit-content;
+  font-size: var(--text-sm);
+  color: var(--graphite);
+  margin-bottom: var(--s2);
+}
+
+.summaryLink:hover {
+  color: var(--ink);
+}
+
+.fileResult {
+  border-top: var(--hairline);
+  padding-top: var(--s2);
+}
+
+.timelineSection {
+  display: grid;
+  gap: var(--s2);
+  padding-top: var(--s5);
+}
+
+.timelineNote {
+  color: var(--pencil);
+  margin-bottom: var(--s4);
+  transform: rotate(-1deg);
+  transform-origin: left;
+}
+
+.patch {
+  display: grid;
+  gap: var(--s4);
+}
+
+.sectionHead {
+  display: grid;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+}
+
+.patchControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s4);
+  max-width: 760px;
+}
+
+.outcome {
+  display: grid;
+  gap: var(--s4);
+  padding-top: var(--s4);
+  border-top: var(--hairline);
+}
+
+.problems {
+  padding-left: 20px;
+  color: var(--warn);
+  font-size: var(--text-sm);
+  display: grid;
+  gap: 2px;
+}
+
+.problemText {
+  color: var(--warn);
+  font-size: var(--text-sm);
+}
+
+.changes {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.changes li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2) var(--s3);
+}
+
+.counts {
+  display: inline-flex;
+  gap: var(--s2);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.add {
+  color: var(--allow);
+}
+
+.del {
+  color: var(--deny);
+}
+
+.approval {
+  display: grid;
+  gap: var(--s4);
+  padding: var(--s5);
+  border: 1px solid var(--marker);
+  border-radius: var(--radius-md);
+  background: var(--marker-soft);
+}
+
+.approval h3 {
+  font-size: var(--text-lg);
+}
+
+.commandList {
+  display: grid;
+  gap: 2px;
+  margin-top: var(--s2);
+}
+
+.commandList code {
+  color: var(--ink);
+}
+
+.testsBlock {
+  display: grid;
+  gap: var(--s3);
+}
+
+.testsBlock h3 {
+  font-size: var(--text-md);
+}
+
+.aftermath {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--s4);
+}
+
+.aftermath dt {
+  font-size: var(--text-xs);
+  color: var(--graphite);
+  margin-bottom: 4px;
+}
+
+.fine {
+  font-size: var(--text-sm);
+  color: var(--graphite);
+  max-width: 70ch;
+}
+
+.evidence {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--s7);
+  align-items: start;
+}
+
+.operations {
+  display: grid;
+  gap: var(--s3);
+}
+
+.more {
+  font-size: var(--text-sm);
+  color: var(--graphite);
+  width: fit-content;
+}
+
+@media (max-width: 1100px) {
+  .split,
+  .evidence {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s6);
+  }
+
+  .timelineSection {
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .framed {
+    padding: var(--s4) var(--s2);
+  }
+
+  .formRow,
+  .patchControls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .approval {
+    padding: var(--s4);
+  }
+}

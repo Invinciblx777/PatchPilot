@@ -1,0 +1,16 @@
+.json {
+  max-height: 360px;
+  overflow: auto;
+  padding: var(--s3) var(--s4);
+  background: var(--panel);
+  border: var(--hairline);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  line-height: 1.65;
+  color: #d9d6cd;
+  white-space: pre;
+}
+
+.figure {
+  min-width: 0;
+}

@@ -1,0 +1,22 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Frontend
+frontend/node_modules/
+src/patchpilot/web/static/
+
+# Vendor reference docs (not ours)
+agntid-docs/
+agntid-docs.zip
+agntid-context.md
